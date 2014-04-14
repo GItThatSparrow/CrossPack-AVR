@@ -9,12 +9,13 @@
 pkgUnixName=CrossPack-AVR
 pkgPrettyName="CrossPack for AVR Development"
 pkgUrlName=crosspack    # name used for http://www.obdev.at/$pkgUrlName
-pkgVersion=20131205
+pkgVersion=20140413
 
 version_make=4.0
 version_automake=1.11.1 # required by binutils
 version_gdb=7.6.1
-version_gmp=4.3.2
+# Upgrading from 4.3.2 since avr toolchain release notes specified gmp-5.0.2, but the other dependencies are the latest too, soo....what the heck (here goes nothing)
+version_gmp=6.0.0
 version_mpfr=3.1.2
 version_mpc=1.0
 version_ppl=0.12.1
@@ -22,13 +23,13 @@ version_cloog=0.16.2
 version_autoconf=2.64   # required by binutils
 version_libusb=1.0.9
 version_avarice=2.13
-version_avrdude=6.0.1
+version_avrdude=6.1
 version_simulavr=0.1.2.7
 # simulavr-1.0.0 does not compile
 # We want to add simavr to the distribution, but it does not compile easily...
 
 # The following packages are fetched from Atmel:
-atmelToolchainVersion=3.4.3
+atmelToolchainVersion=3.4.2
 version_binutils=2.23.1
 version_gcc=4.7.2
 #version_gcc3=3.4.6
@@ -439,7 +440,7 @@ getPackage "$atmelBaseURL/avr-libc-$version_avrlibc.tar.gz"
 
 getPackage http://ftp.sunet.se/pub/gnu/make/make-"$version_make".tar.bz2
 getPackage http://ftp.gnu.org/gnu/automake/automake-"$version_automake".tar.gz
-getPackage http://ftp.gmplib.org/gmp/gmp-"$version_gmp".tar.bz2
+getPackage ftp://ftp.gmplib.org/pub/gmp-"$version_gmp"/gmp-"$version_gmp".tar.bz2
 getPackage http://ftp.sunet.se/pub/gnu/mpfr/mpfr-"$version_mpfr".tar.bz2
 getPackage http://www.multiprecision.org/mpc/download/mpc-"$version_mpc".tar.gz
 # We would like to compile with cloog, but linking 32 bit C++ code fails with clang.
