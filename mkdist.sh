@@ -5,7 +5,8 @@
 #
 #  Created by Christian Starkjohann on 2012-11-28.
 #  Copyright (c) 2012 Objective Development Software GmbH.
-
+buildLogFile=buildLog.$(date "+%H-%M-%S").log
+echo Starting build at $(date "+%H:%M:%S") > $buildLogFile
 pkgUnixName=CrossPack-AVR
 pkgPrettyName="CrossPack for AVR Development"
 pkgUrlName=crosspack    # name used for http://www.obdev.at/$pkgUrlName
@@ -13,7 +14,7 @@ pkgVersion=20140413
 
 version_make=4.0
 version_automake=1.11.1 # required by binutils
-version_gdb=7.6.1
+version_gdb=7.6.2
 # Upgrading from 4.3.2 since avr toolchain release notes specified gmp-5.0.2, but the other dependencies are the latest too, soo....what the heck (here goes nothing)
 version_gmp=6.0.0
 version_mpfr=3.1.2
@@ -30,8 +31,8 @@ version_simulavr=0.1.2.7
 
 # The following packages are fetched from Atmel:
 atmelToolchainVersion=3.4.2
-version_binutils=2.23.1
-version_gcc=4.7.2
+version_binutils=2.24
+version_gcc=4.8.2
 #version_gcc3=3.4.6
 version_headers=6.1.3.1475
 version_avrlibc=1.8.0
@@ -141,6 +142,12 @@ lipoHelperRecursive() # <action> <baseDir>
     fi
 }
 
+updateLog() # <msg>
+{
+    msg="$1"
+    stamp=($(date "+%H:%M:%S")" - ")
+    echo $stamp$msg >> $buildLogFile
+}
 
 ###############################################################################
 # building the packages
@@ -286,12 +293,14 @@ buildPackage() # <package-name> <known-product> <additional-config-args...>
     product="$2"
     if [ -f "$product" ]; then
         echo "Skipping build of $name because it's already built"
+        updateLog "Skipping build of $name because it's already built"
         return  # the product we generate exists already
     fi
     shift; shift
-    echo "################################################################################"
-    echo "Building $name at $(date +"%Y-%m-%d %H:%M:%S")"
-    echo "################################################################################"
+    printf "${bakylw}${txtblk}################################################################################"
+    printf "${bakblu}${txtylw}Building $name at $(date +"%Y-%m-%d %H:%M:%S")"
+    printf "${bakylw}${txtblk}################################################################################"
+    updateLog "Building \"$name\""
     cwd=$(pwd)
 	base=$(echo "$name" | sed -e 's/-[.0-9]\{1,\}$//g')
     version=$(echo "$name" | sed -e 's/^.*-\([.0-9]\{1,\}\)$/\1/')
@@ -473,6 +482,7 @@ echo "Starting build at $(date +"%Y-%m-%d %H:%M:%S")"
 # math and other prerequisites
 #########################################################################
 export M4="xcrun m4"
+
 buildPackage autoconf-"$version_autoconf" "$installdir/autoconf/bin/autoconf" --prefix="$installdir/autoconf"
 unset M4
 export PATH="$installdir/autoconf/bin:$PATH"
