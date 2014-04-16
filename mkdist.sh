@@ -293,14 +293,14 @@ buildPackage() # <package-name> <known-product> <additional-config-args...>
     product="$2"
     if [ -f "$product" ]; then
         echo "Skipping build of $name because it's already built"
-        updateLog "Skipping build of $name because it's already built"
+        updateLog "Skipping build of $name because it's already built (\"$@\")"
         return  # the product we generate exists already
     fi
     shift; shift
     printf "${bakylw}${txtblk}################################################################################"
     printf "${bakblu}${txtylw}Building $name at $(date +"%Y-%m-%d %H:%M:%S")"
     printf "${bakylw}${txtblk}################################################################################"
-    updateLog "Building \"$name\""
+    updateLog "Building \"$name\" with \"$@\"";
     cwd=$(pwd)
 	base=$(echo "$name" | sed -e 's/-[.0-9]\{1,\}$//g')
     version=$(echo "$name" | sed -e 's/^.*-\([.0-9]\{1,\}\)$/\1/')
@@ -418,7 +418,7 @@ fixLoadCommandInBinary() #<binary-path> <searchLibraryPath> <replacementLibraryP
 ###############################################################################
 # main code
 ###############################################################################
-
+updateLog "Main Code"
 if [ -d "$prefix" -a ! -w "$prefix" -a -x "$prefix/uninstall" ]; then
     echo "Please type your password so that we can run uninstall as root:"
     if ! sudo "$prefix/uninstall"; then
@@ -428,6 +428,7 @@ if [ -d "$prefix" -a ! -w "$prefix" -a -x "$prefix/uninstall" ]; then
 fi
 
 if ! "$debug"; then
+    updateLog "THE \"DEBUG\" MODE WAS SET"
     rm -rf "$installdir"
     rm -rf compile
     rm -rf "$prefix"
@@ -438,6 +439,7 @@ if [ ! -d packages ]; then
 fi
 
 echo "Starting download at $(date +"%Y-%m-%d %H:%M:%S")"
+updateLog "Starting download at $(date +"%Y-%m-%d %H:%M:%S")"
 
 atmelBaseURL="http://distribute.atmel.no/tools/opensource/Atmel-AVR-Toolchain-$atmelToolchainVersion/avr/"
 getPackage "$atmelBaseURL/avr-binutils-$version_binutils.tar.gz"
@@ -477,10 +479,11 @@ fi
 #########################################################################
 
 echo "Starting build at $(date +"%Y-%m-%d %H:%M:%S")"
-
+updateLog "Starting build at $(date +"%Y-%m-%d %H:%M:%S")"
 #########################################################################
 # math and other prerequisites
 #########################################################################
+updateLog "math and other prerequisites"
 export M4="xcrun m4"
 
 buildPackage autoconf-"$version_autoconf" "$installdir/autoconf/bin/autoconf" --prefix="$installdir/autoconf"
@@ -501,6 +504,7 @@ rm -f "$installdir/lib/"*.dylib # ensure we have no shared libs
 #########################################################################
 # additional goodies
 #########################################################################
+updateLog "additional goodies"
 buildPackage make-"$version_make" "$prefix/bin/make"
 (
     for arch in i386 x86_64; do
@@ -525,6 +529,7 @@ checkreturn
 #########################################################################
 # binutils and prerequisites
 #########################################################################
+updateLog "binutils and prerequisites"
 buildPackage avr-binutils-"$version_binutils" "$prefix/bin/avr-nm" --target=avr
 if [ ! -f "$prefix/bfd/lib/libbfd.a" ]; then
     mkdir -p "$prefix/bfd/include"  # copy bfd directory manually
@@ -542,6 +547,7 @@ fi
 #########################################################################
 # gcc bootstrap
 #########################################################################
+updateLog "gcc bootstrap"
 buildPackage avr-gcc-"$version_gcc" "$prefix/bin/avr-gcc" --target=avr --enable-languages=c --disable-libssp --disable-libada --with-dwarf2 --disable-shared --with-avrlibc=yes --with-gmp="$installdir" --with-mpfr="$installdir" --with-mpc="$installdir"
 
 # --with-ppl="$installdir" --with-cloog="$installdir" --enable-cloog-backend=isl
@@ -563,6 +569,7 @@ buildPackage avr-gcc-"$version_gcc" "$prefix/bin/avr-gcc" --target=avr --enable-
 #########################################################################
 # avr-libc
 #########################################################################
+updateLog "avr-libc"
 unpackPackage "avr-headers-$version_headers"
 buildPackage avr-libc-"$version_avrlibc" "$prefix/avr/lib/libc.a" --host=avr
 copyPackage avr-libc-user-manual-"$version_avrlibc" "$prefix/doc/avr-libc"
@@ -571,11 +578,13 @@ copyPackage avr-libc-manpages-"$version_avrlibc" "$prefix/man"
 #########################################################################
 # avr-gcc full build
 #########################################################################
+updateLog "avr-gcc full build"
 buildPackage avr-gcc-"$version_gcc" "$prefix/bin/avr-g++" --target=avr --enable-languages=c,c++ --disable-libssp --disable-libada --with-dwarf2 --disable-shared --with-avrlibc=yes --with-gmp="$installdir" --with-mpfr="$installdir" --with-mpc="$installdir"
 
 #########################################################################
 # gdb and simulavr
 #########################################################################
+updateLog "gdb and simulavr"
 buildPackage gdb-"$version_gdb" "$prefix/bin/avr-gdb" --target=avr --without-python
 (
     binutils="$(pwd)/compile/avr-binutils-$version_binutils"
@@ -593,9 +602,12 @@ checkreturn
 #########################################################################
 # avrdude
 #########################################################################
+updateLog "avrdude"
 (
     buildCFLAGS="$buildCFLAGS $("$prefix/bin/libusb-config" --cflags)"
+    updateLog "buildCFLAGS=$buildCFLAGS";
     export LDFLAGS="$LDFLAGS $("$prefix/bin/libusb-config" --libs)"
+    updateLog "LDFLAGS=$LDFLAGS";
     buildPackage avrdude-"$version_avrdude" "$prefix/bin/avrdude"
     fixLoadCommandInBinary "$prefix/bin/avrdude" /usr/lib/libedit.3.dylib /usr/lib/libedit.dylib
     copyPackage avrdude-doc-"$version_avrdude" "$prefix/doc/avrdude"
@@ -608,6 +620,7 @@ checkreturn
 #########################################################################
 # ensure that we don't link anything local:
 #########################################################################
+updateLog "ensure that we don't link anything local"
 libErrors=$(find "$prefix" -type f -perm +0100 -print | while read file; do
     locallibs=$(otool -L "$file" | tail -n +2 | grep '^/usr/local/')
     if [ -n "$locallibs" ]; then
@@ -626,6 +639,7 @@ fi
 #########################################################################
 # basic tests
 #########################################################################
+updateLog "Basic Tests"
 tmpfile="/tmp/test-$$.elf"
 rm -rf "$tmpfile"
 echo "int main(void) { return 0; }" | "$prefix/bin/avr-gcc" -x c -o "$tmpfile" -
@@ -666,6 +680,7 @@ done
 #########################################################################
 # Create shell scripts and supporting files
 #########################################################################
+updateLog "Create shell scripts and supporting files"
 rm -f "$prefix/versions.txt"
 cat "$prefix/etc/versions.d"/* >"$prefix/versions.txt"
 echo "stripping all executables"
@@ -785,7 +800,7 @@ mv "manual" "$prefix/"
 #########################################################################
 # Mac OS X Package creation
 #########################################################################
-
+updateLog "Mac OS X Package creation"
 echo "Starting package creation at $(date +"%Y-%m-%d %H:%M:%S")"
 
 # remove files which should not make it into the package
@@ -849,7 +864,7 @@ rm -rf "$pkgroot"
 #########################################################################
 # Disk Image
 #########################################################################
-
+updateLog "Disk Image"
 echo "Starting disk image creation at $(date +"%Y-%m-%d %H:%M:%S")"
 
 rwImage="/tmp/$pkgUnixName-$pkgVersion-rw-$$.dmg"   # temporary disk image
@@ -919,7 +934,7 @@ open $(dirname "$dmg")
 #########################################################################
 # Cleanup
 #########################################################################
-
+updateLog "Cleanup"
 echo "=== cleaning up..."
 rm -rf "$osxpkgtmp"
 if ! "$debug"; then
