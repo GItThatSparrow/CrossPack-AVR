@@ -5,7 +5,7 @@
 #
 #  Created by Christian Starkjohann on 2012-11-28.
 #  Copyright (c) 2012 Objective Development Software GmbH.
-buildLogFile=buildLog.$(date "+%H-%M-%S").log
+buildLogFile=buildLog.$(date "+%Y-%m-%d-%H-%M-%S").log
 echo Starting build at $(date "+%H:%M:%S") > $buildLogFile
 pkgUnixName=CrossPack-AVR
 pkgPrettyName="CrossPack for AVR Development"
@@ -39,6 +39,7 @@ version_avrlibc=1.8.0
 
 debug=false
 if [ "$1" = debug ]; then
+    echo "DEBUG MODE WAS SET FROM THE COMMAND LINE INVOCATION - \"$1\"" >> $buildLogFile
     debug=true
 fi
 
@@ -293,14 +294,14 @@ buildPackage() # <package-name> <known-product> <additional-config-args...>
     product="$2"
     if [ -f "$product" ]; then
         echo "Skipping build of $name because it's already built"
-        updateLog "Skipping build of $name because it's already built (\"$@\")"
+        updateLog "Skipping build of $name because it's already built - $@"
         return  # the product we generate exists already
     fi
     shift; shift
-    printf "${bakylw}${txtblk}################################################################################"
-    printf "${bakblu}${txtylw}Building $name at $(date +"%Y-%m-%d %H:%M:%S")"
-    printf "${bakylw}${txtblk}################################################################################"
-    updateLog "Building \"$name\" with \"$@\"";
+    echo "################################################################################"
+    echo "Building $name at $(date +"%Y-%m-%d %H:%M:%S")"
+    echo "################################################################################"
+    updateLog "Building \"$name\" with $@";
     cwd=$(pwd)
 	base=$(echo "$name" | sed -e 's/-[.0-9]\{1,\}$//g')
     version=$(echo "$name" | sed -e 's/^.*-\([.0-9]\{1,\}\)$/\1/')
@@ -428,7 +429,7 @@ if [ -d "$prefix" -a ! -w "$prefix" -a -x "$prefix/uninstall" ]; then
 fi
 
 if ! "$debug"; then
-    updateLog "THE \"DEBUG\" MODE WAS SET"
+    updateLog "THE \"DEBUG\" MODE WAS 'NOT' SET - REMOVING PREVIOUS BUILD"
     rm -rf "$installdir"
     rm -rf compile
     rm -rf "$prefix"
