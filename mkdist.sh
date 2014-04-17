@@ -54,6 +54,8 @@ sysroot="$xcodepath/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.8.sdk"
 # Do not include original PATH in our PATH to ensure that third party stuff is not found
 PATH="$prefix/bin:$xcodepath/usr/bin:$xcodepath/Toolchains/XcodeDefault.xctoolchain/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 export PATH
+PATH="${PATH}:/usr/local/include";
+export PATH
 
 commonCFLAGS="-isysroot $sysroot -mmacosx-version-min=10.6"
 # Build libraries for i386 and x86_64, but executables i386 only so that the
@@ -146,8 +148,16 @@ lipoHelperRecursive() # <action> <baseDir>
 updateLog() # <msg>
 {
     msg="$1"
+    args="$2"
     stamp=($(date "+%H:%M:%S")" - ")
     echo $stamp$msg >> $buildLogFile
+
+    if [[ $(echo "${#2}") -gt 0 ]]; then
+        msg="$args"
+    else
+        msg="[No arguments passed-in]"
+    fi
+    echo "    args:  $msg\n" >> $buildLogFile
 }
 
 ###############################################################################
@@ -294,14 +304,14 @@ buildPackage() # <package-name> <known-product> <additional-config-args...>
     product="$2"
     if [ -f "$product" ]; then
         echo "Skipping build of $name because it's already built"
-        updateLog "Skipping build of $name because it's already built - $@"
+        updateLog "Skipping build of $name because it's already built" "$@"
         return  # the product we generate exists already
     fi
     shift; shift
     echo "################################################################################"
     echo "Building $name at $(date +"%Y-%m-%d %H:%M:%S")"
     echo "################################################################################"
-    updateLog "Building \"$name\" with $@";
+    updateLog "Building \"$name\" with..." "$@";
     cwd=$(pwd)
 	base=$(echo "$name" | sed -e 's/-[.0-9]\{1,\}$//g')
     version=$(echo "$name" | sed -e 's/^.*-\([.0-9]\{1,\}\)$/\1/')
@@ -605,10 +615,11 @@ checkreturn
 #########################################################################
 updateLog "avrdude"
 (
+    updateLog "PATH" "${PATH}";
     buildCFLAGS="$buildCFLAGS $("$prefix/bin/libusb-config" --cflags)"
-    updateLog "buildCFLAGS=$buildCFLAGS";
+    updateLog "buildCFLAGS" "$buildCFLAGS";
     export LDFLAGS="$LDFLAGS $("$prefix/bin/libusb-config" --libs)"
-    updateLog "LDFLAGS=$LDFLAGS";
+    updateLog "LDFLAGS" "$LDFLAGS";
     buildPackage avrdude-"$version_avrdude" "$prefix/bin/avrdude"
     fixLoadCommandInBinary "$prefix/bin/avrdude" /usr/lib/libedit.3.dylib /usr/lib/libedit.dylib
     copyPackage avrdude-doc-"$version_avrdude" "$prefix/doc/avrdude"
