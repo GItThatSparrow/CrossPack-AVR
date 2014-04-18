@@ -1,0 +1,16 @@
+*** ./flip1.orig.c	2014-04-18 11:41:14.000000000 -0600
+--- ./flip1.c	2014-04-18 11:47:50.000000000 -0600
+***************
+*** 30,40 ****
+  #include <limits.h>
+  #include <unistd.h>
+  
+- #if HAVE_STDINT_H
+  #include <stdint.h>
+- #elif HAVE_INTTYPES_H
+- #include <inttypes.h>
+- #endif
+  
+  #include "flip1.h"
+  #include "dfu.h"
+--- 30,36 ----
